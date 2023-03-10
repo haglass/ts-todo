@@ -1,6 +1,4 @@
 // firebase 관련
-import { fireDB } from "./firebase";
-
 import { useEffect, useState } from "react";
 // 상태관리를 위한 객체복사 라이브러리
 import produce from "immer";
@@ -15,6 +13,13 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
+import { async } from "@firebase/util";
+import { fireDB, auth } from "./firebase";
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 export type TodoType = {
   uid: string;
   title: string;
@@ -209,7 +214,19 @@ const AppContainer = () => {
   // 전체 목록 삭제
   const clearTodo = () => {
     setTodoList([]);
-    localStorage.removeItem(localStorageName);
+    todoList.forEach(async (element) => {
+      // firebase 데이터 1개 삭제
+      const userDoc = doc(fireDB, firebaseStorageName, element.uid);
+      try {
+        const res = await deleteDoc(userDoc);
+        // console.log(res); // res는 undefined
+      } catch (e) {
+        console.log(e);
+      } finally {
+        console.log("end");
+      }
+    });
+    // localStorage.removeItem(localStorageName);
   };
   // 정렬기능
   const sortTodo = (sortType: string) => {};
@@ -224,6 +241,35 @@ const AppContainer = () => {
 
   // 데이터목록의 타입
   const states: StatesType = { todoList };
+  const fbLogin = (email: string, password: string) => {
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in
+        const user = userCredential.user;
+        console.log(user);
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log("errorCode : ", errorCode);
+        console.log("errorMessage : ", errorMessage);
+      });
+  };
+  // 사용자 가입
+  const fbJoin = (email: string, password: string) => {
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in
+        const user = userCredential.user;
+        console.log(user);
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log("errorCode : ", errorCode);
+        console.log("errorMessage : ", errorMessage);
+      });
+  };
 
   useEffect(() => {
     getLocalData();
